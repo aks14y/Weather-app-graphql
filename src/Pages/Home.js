@@ -1,64 +1,68 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input, Button } from "reactstrap";
 import { useLazyQuery } from "@apollo/client";
-import { GET_WEATHER_QUERY } from "../Graphql/Queries";
+import { GET_CHARACTERS_QUERY } from "../Graphql/Queries";
 
 function Home() {
-  const [cityDetails, setCityDetails] = useState("");
-  const [getWeather, { loading, data, error }] = useLazyQuery(
-    GET_WEATHER_QUERY,
-    {
-      variables: { name: cityDetails },
-    }
-  );
-  let help;
-
-  if (loading) return <h3>Loading</h3>;
-  if (error) return <h1>error</h1>;
-  if (data) {
-    console.log(data);
-  }
+  const [character, setCharacter] = useState("");
+  const [getCharacters, { loading, data }] = useLazyQuery(GET_CHARACTERS_QUERY);
 
   function handleSubmit() {
-    setCityDetails(help);
-    getWeather();
+    getCharacters({
+      variables: { name: character },
+    });
   }
 
   const handleChange = (e) => {
-    help = e.target.value;
+    setCharacter(e.target.value);
   };
 
+  useEffect(() => {
+    getCharacters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <>
-      <div className="row justify-content-center">
-        <h1 className="text-center">Search weather</h1>
+    <div>
+      <h3 className="text-center">
+        You can access data about hundreds of characters in Rick and Morty.
+      </h3>
+      <div className="d-flex justify-content-center align-center flex-row gap-2">
         <Input
           className="col-1 w-25 align-center"
           type="text"
-          placeholder="city name"
+          value={character}
+          placeholder="character name"
           onChange={handleChange}
         />
         <Button onClick={handleSubmit} className="col-1">
           Search
         </Button>
+        <Button
+          onClick={() => {
+            setCharacter("");
+            getCharacters({});
+          }}
+          className="col-1"
+        >
+          Clear
+        </Button>
       </div>
 
-      <div className="weather">
-        {data && (
+      <div className="m-5">
+        {loading ? (
+          <h3>Loading...</h3>
+        ) : data && data.characters?.results?.length ? (
           <>
-            <h1> {data.getCityByName.name} </h1>
-            <h1>
-              {" "}
-              Temperature: {data.getCityByName.weather.temperature.actual}
-            </h1>
-            <h1>
-              Description: {data.getCityByName.weather.summary.description}
-            </h1>
-            <h1>Wind Speed: {data.getCityByName.weather.wind.speed}</h1>
+            {data.characters.results.map((char, idx) => (
+              <p key={idx}>{char.name}</p>
+            ))}
           </>
+        ) : (
+          <p>No results found!</p>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
